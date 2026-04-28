@@ -1,0 +1,104 @@
+// Motor pins
+#define IN1 8
+#define IN2 9
+#define IN3 10
+#define IN4 11
+
+#define ENA 5
+#define ENB 6
+
+// Sensors
+#define IR 2
+#define MOISTURE A0
+
+// LED
+#define LED 3
+
+int speedVal = 210;  // speed
+
+// Moisture calibration (adjust after testing)
+int dryValue = 950;
+int wetValue = 400;
+
+void setup() {
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  pinMode(ENA, OUTPUT);
+  pinMode(ENB, OUTPUT);
+
+  pinMode(IR, INPUT);
+  pinMode(LED, OUTPUT);
+
+  Serial.begin(9600);
+}
+
+// car
+void forward() {
+  analogWrite(ENA, speedVal);
+  analogWrite(ENB, speedVal);
+
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+}
+
+// STOP
+void stopCar() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+}
+
+// TURN RIGHT
+void turnRight() {
+  analogWrite(ENA, speedVal);
+  analogWrite(ENB, speedVal);
+
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+}
+
+void loop() {
+  int obstacle = digitalRead(IR);
+  int moistureVal = analogRead(MOISTURE);
+
+  // Convert to percentage
+  int moisturePercent = map(moistureVal, dryValue, wetValue, 0, 100);
+  moisturePercent = constrain(moisturePercent, 0, 100);
+
+  //  LED logic (moisture detected)
+  if (moisturePercent > 50) {   // threshold (adjust if needed)
+    digitalWrite(LED, HIGH);   // LED ON
+  } else {
+    digitalWrite(LED, LOW);    // LED OFF
+  }
+
+  Serial.print("Moisture %: ");
+  Serial.println(moisturePercent);
+
+  //  CAR LOGIC
+  if (obstacle == LOW) {
+    stopCar();
+    delay(300);
+
+    turnRight();
+    delay(600);  // adjust for 90°
+
+    stopCar();
+    delay(200);
+  }
+  else {
+    forward();
+  }
+
+  delay(200);
+}
